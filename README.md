@@ -1,6 +1,6 @@
 # Zenskar Two-Way Integration System
 
-A real-time customer data synchronization system built for Zenskar's Backend Engineer Intern ## 🐳 Docker Container Architecturessignment. This project demonstrates bidirectional integration between an internal customer catalog and Stripe, with event-driven architecture using Kafka.
+A real-time customer data synchronization system built for Zenskar's Backend Engineer Intern This project demonstrates bidirectional integration between an internal customer catalog and Stripe, with event-driven architecture using Kafka.
 
 ## 🎯 Project Overview
 
