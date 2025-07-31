@@ -202,12 +202,12 @@ async def delete_customer(
             "email": customer.email
         }
         
-        # Delete customer (cascades to external_mappings)
+        # First publish the event to Kafka so worker can process before the mapping is deleted
+        await _publish_customer_event("customer.deleted", customer_data)
+        
+        # Then delete customer (cascades to external_mappings)
         await db.delete(customer)
         await db.commit()
-        
-        # Publish event to Kafka
-        await _publish_customer_event("customer.deleted", customer_data)
         
         logger.info(f"Deleted customer: {customer_id}")
         
