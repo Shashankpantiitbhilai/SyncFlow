@@ -1,12 +1,11 @@
 # Zenskar Two-Way Integration System
 
-A real-time customer data synchronization system built for Zenskar's Backend Engineer Intern This project demonstrates bidirectional integration between an internal customer catalog and Stripe, with event-driven architecture using Kafka.
+A real-time, event-driven system for seamless bi-directional synchronization of customer data between an internal catalog and Stripe. This project demonstrates robust integration using Kafka for streaming, ensuring accurate and consistent customer records across systems.
 
 ## 🎯 Project Overview
 
 This system implements a two-way sync between your internal customer database and Stripe's customer catalog. Changes in either system are automatically propagated to the other in near real-time using webhooks and background workers.
 
-## ✅ Assignment Requirements Completed
 
 ### ✅ Core Requirements
 - [x] **Customer Table**: PostgreSQL with ID, name, email columns
@@ -483,38 +482,3 @@ CREATE TABLE external_mappings (
 - **Environment Variables**: Sensitive data stored in environment variables
 - **API Keys**: Stripe keys are test keys, rotate for production
 - **Database**: PostgreSQL with proper connection pooling
-
-## 📝 Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/db` |
-| `KAFKA_BOOTSTRAP_SERVERS` | Kafka broker addresses | `kafka:9093` |
-| `STRIPE_SECRET_KEY` | Stripe API secret key | `sk_test_...` |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret | `whsec_...` |
-| `API_HOST` | API server host | `0.0.0.0` |
-| `API_PORT` | API server port | `8000` |
-
-## 🎯 Performance Considerations
-
-- **Async Processing**: All I/O operations are asynchronous
-- **Connection Pooling**: Database connections are pooled
-- **Event Processing**: Workers process events in parallel
-- **Error Handling**: Comprehensive retry logic with exponential backoff
-- **Monitoring**: Detailed logging for debugging and monitoring
-
-## Assignment Summary
-
-This project successfully implements all requirements for the Zenskar Backend Engineer Intern assignment:
-
-✅ **Customer table** with PostgreSQL  
-✅ **Stripe integration** with test account  
-✅ **Kafka queue** for event processing  
-✅ **Outbound sync** with background workers  
-✅ **Inbound sync** with webhook handling  
-✅ **Extensible architecture** for future integrations  
-✅ **Comprehensive documentation** and deployment instructions  
-
-The system demonstrates real-time bidirectional synchronization with proper error handling, monitoring, and a scalable architecture ready for production use.
-
-
