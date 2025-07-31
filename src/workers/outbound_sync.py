@@ -142,16 +142,29 @@ class OutboundSyncWorker(BaseWorker):
                         mapping = mapping.scalar_one_or_none()
                         
                         if not mapping:
+                            # If no mapping exists, it means either:
+                            # 1. Customer was never synced to Stripe
+                            # 2. Mapping was already deleted (in case of retries)
                             logger.warning(f"No Stripe mapping for deleted customer {customer_id}")
                             sync_event.status = "skipped"
                             await db.commit()
                             return
+
+                        try:
+                            # First try to delete from Stripe
+                            await self.stripe_integration.delete_customer(mapping.external_id)
+                            logger.info(f"Successfully deleted customer {customer_id} from Stripe")
                             
-                        # Delete from Stripe
-                        await self.stripe_integration.delete_customer(mapping.external_id)
-                        
-                        # Remove mapping
-                        await db.delete(mapping)
+                            # Only after successful Stripe deletion, remove mapping
+                            await db.delete(mapping)
+                            logger.info(f"Removed mapping for customer {customer_id}")
+                            
+                        except Exception as e:
+                            logger.error(f"Failed to delete customer {customer_id} from Stripe: {e}")
+                            sync_event.status = "failed"
+                            sync_event.error = str(e)
+                            await db.commit()
+                            raise
                     
                     from datetime import datetime
                     sync_event.status = "completed"
