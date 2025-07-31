@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     log_format: str = "json"
 
     # Security
-    secret_key: str = "your-secret-key-change-this-in-production"
+    secret_key: str = "zenskar-backend"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 

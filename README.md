@@ -114,7 +114,14 @@ ngrok http 8000
 curl http://localhost:8000/health
 ```
 
-#### Create Customer (Outbound Sync)
+#### 📋 Interactive API Documentation
+Once the system is running, access the Swagger UI for easy API testing:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+#### 🔄 Testing Outbound Sync (Internal → Stripe)
+
+**Option 1: Using cURL**
 ```bash
 curl -X POST http://localhost:8000/api/v1/customers \
   -H "Content-Type: application/json" \
@@ -124,10 +131,45 @@ curl -X POST http://localhost:8000/api/v1/customers \
   }'
 ```
 
-#### List Customers
+**Option 2: Using Swagger UI**
+1. Open http://localhost:8000/docs
+2. Find the `POST /api/v1/customers` endpoint
+3. Click "Try it out"
+4. Enter customer data:
+   ```json
+   {
+     "name": "Jane Smith",
+     "email": "jane.smith@example.com"
+   }
+   ```
+5. Click "Execute"
+6. Check the response and verify customer creation
+
+#### 🔽 Testing Inbound Sync (Stripe → Internal)
+
+**Option 1: Using Stripe Dashboard (Recommended)**
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com/test/customers)
+2. Click "Add customer"
+3. Fill in customer details
+4. Save the customer
+5. Check your internal system for the synced customer
+
+**Option 2: Using Stripe CLI**
+```bash
+# Install Stripe CLI first: https://stripe.com/docs/stripe-cli
+stripe customers create \
+  --name="Bob Wilson" \
+  --email="bob.wilson@example.com"
+```
+
+#### 📊 Verify Sync Results
+
+**List Internal Customers**
 ```bash
 curl http://localhost:8000/api/v1/customers
 ```
+
+**Or use Swagger UI**: http://localhost:8000/docs → `GET /api/v1/customers`
 
 #### Watch the Sync Process
 ```bash
