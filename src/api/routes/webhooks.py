@@ -21,38 +21,66 @@ async def stripe_webhook(
         # Get the raw body
         body = await request.body()
         
-        # Verify webhook signature (will implement in stripe integration)
+        # Verify webhook signature
         if not stripe_signature:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Missing Stripe signature"
             )
-        
-        # Parse webhook event
+            
+        # Parse and verify the webhook
         try:
-            import json
-            event = json.loads(body.decode('utf-8'))
-        except (json.JSONDecodeError, UnicodeDecodeError):
+            from ...integrations.stripe.client import StripeIntegration
+            stripe_client = StripeIntegration()
+            
+            # Verify the signature using Stripe's library
+            import stripe
+            event = stripe.Webhook.construct_event(
+                payload=body,
+                sig_header=stripe_signature,
+                secret=stripe_client.webhook_secret
+            )
+        except stripe.error.SignatureVerificationError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid JSON payload"
+                detail="Invalid signature"
             )
-        
-        # Log the event
+        except Exception as e:
+            logger.error(f"Error verifying webhook signature: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Error verifying webhook signature"
+            )
+
         logger.info(f"Received Stripe webhook: {event.get('type', 'unknown')}")
+        logger.info(f"Event data: {event.get('data', {})}")
         
         # Filter for customer events
         if event.get("type", "").startswith("customer."):
-            # Publish to inbound sync queue
-            await kafka_client.produce_message(
-                KafkaTopics.SYNC_INBOUND,
-                {
-                    "source": "stripe",
-                    "event_type": event.get("type"),
-                    "stripe_event": event
+            # Transform customer data for our system
+            customer_data = stripe_client.transform_external_to_internal(event['data']['object'])
+            
+            # Create sync event message
+            message = {
+                "source": "stripe",
+                "event_type": event.get("type"),
+                "data": customer_data,
+                "skip_outbound": True,  # Flag to prevent loops
+                "metadata": {
+                    "stripe_event_id": event.get("id"),
+                    "stripe_event_type": event.get("type"),
+                    "stripe_created": event.get("created"),
                 }
+            }
+            
+            # Publish to Kafka for processing
+            await kafka_client.publish_message(
+                topic=KafkaTopics.SYNC_INBOUND,
+                key=customer_data.get("external_id"),
+                value=message
             )
-            logger.info(f"Published Stripe event to inbound sync: {event.get('id')}")
+            
+            logger.info(f"Published Stripe event to sync queue: {event.get('id')}")
         
         return {"status": "success"}
         

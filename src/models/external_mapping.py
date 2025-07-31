@@ -15,7 +15,7 @@ class ExternalMapping(Base):
     __tablename__ = "external_mappings"
     
     id = Column(Integer, primary_key=True, index=True)
-    internal_customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    internal_customer_id = Column(Integer, ForeignKey("customers.id", ondelete="SET NULL"), nullable=True)
     external_system = Column(String(50), nullable=False)
     external_id = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=func.now())

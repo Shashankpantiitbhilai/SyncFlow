@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship
 from pydantic import BaseModel, EmailStr
 
 from ..core.database import Base
+from .external_mapping import ExternalMappingResponse
 
 
 class Customer(Base):
@@ -47,7 +48,10 @@ class CustomerResponse(CustomerBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    
+
+class CustomerWithMappings(CustomerResponse):
+    """Schema for customer response with external mappings."""
+    external_mappings: List[ExternalMappingResponse]
     class Config:
         from_attributes = True
 

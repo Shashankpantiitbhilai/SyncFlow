@@ -72,10 +72,17 @@ class KafkaClient:
                 bootstrap_servers=self.bootstrap_servers,
                 group_id=consumer_group,
                 auto_offset_reset=settings.kafka_auto_offset_reset,
-                value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+                value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+                session_timeout_ms=60000,  # 60 seconds
+                heartbeat_interval_ms=20000,  # 20 seconds
+                max_poll_interval_ms=300000,  # 5 minutes
+                enable_auto_commit=True,
+                auto_commit_interval_ms=5000  # 5 seconds
             )
             
+            # Wait for topics to be available
             await consumer.start()
+            await consumer._client.force_metadata_update()  # Force metadata update
             self.consumers[topic] = consumer
             
             logger.info(f"Kafka consumer started for topic {topic} with group {consumer_group}")
