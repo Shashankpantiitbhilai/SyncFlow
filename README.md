@@ -73,7 +73,7 @@ graph TB
 
 ### 1. Clone and Setup
 ```bash
-git clone <your-repository>
+git clone https://github.com/Shashankpantiitbhilai/zenskar-backend-assignment.git
 cd zenskar-backend-assignment
 ```
 
@@ -82,7 +82,7 @@ cd zenskar-backend-assignment
 cp .env.example .env
 ```
 
-Edit `.env` file with your Stripe credentials:
+Edit `.env` file with  Stripe credentials:
 ```env
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
@@ -387,24 +387,18 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant OW as ⚙️ Outbound Worker
-    participant S as 💳 Stripe API
-    participant DB as 🗄️ PostgreSQL
-    participant KT as 📨 Kafka Topic
+    participant Worker as ⚙️ Worker
+    participant Stripe as 💳 Stripe
+    participant DB as 🗄️ Database
 
-    OW->>+S: stripe.Customer.create()
-    S-->>-OW: ❌ 429 Rate Limited
+    Worker->>Stripe: Create Customer
+    Stripe-->>Worker: ❌ Rate Limited (429)
     
-    Note over OW: 🚨 Catch RateLimitError
-    OW->>+DB: UPDATE sync_events (status='failed', retry_count++)
-    
-    Note over OW: ⏳ Exponential backoff
-    OW->>OW: sleep(2^retry_count)
-    
-    OW->>+S: 🔄 Retry stripe.Customer.create()
-    S-->>-OW: ✅ 200 Success
-    
-    OW->>+DB: UPDATE sync_events (status='completed')
+    Worker->>DB: Mark as Failed
+    Worker->>Worker: Wait & Retry
+    Worker->>Stripe: Create Customer (Retry)
+    Stripe-->>Worker: ✅ Success (200)
+    Worker->>DB: Mark as Completed
 ```
 
 **Error Scenarios Handled:**
