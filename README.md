@@ -30,20 +30,20 @@ This system implements a two-way sync between your internal customer database an
 ```mermaid
 graph TB
     subgraph "Internal System"
-        API[FastAPI Server]
-        DB[(PostgreSQL)]
-        Worker[Background Workers]
+        API[FastAPI Server]:::apiStyle
+        DB[(PostgreSQL)]:::dbStyle
+        Worker[Background Workers]:::workerStyle
     end
     
     subgraph "Message Queue"
-        Kafka[Kafka Broker]
-        OutTopic[sync.outbound]
-        InTopic[sync.inbound]
+        Kafka[Kafka Broker]:::kafkaStyle
+        OutTopic[sync.outbound]:::topicStyle
+        InTopic[sync.inbound]:::topicStyle
     end
     
     subgraph "External Systems"
-        Stripe[Stripe API]
-        Webhook[Webhook Handler]
+        Stripe[Stripe API]:::stripeStyle
+        Webhook[Webhook Handler]:::webhookStyle
     end
     
     API --> DB
@@ -54,6 +54,14 @@ graph TB
     Webhook --> InTopic
     InTopic --> Worker
     Worker --> DB
+
+    classDef apiStyle fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    classDef dbStyle fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+    classDef workerStyle fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef kafkaStyle fill:#9C27B0,stroke:#6A1B9A,stroke-width:2px,color:#fff
+    classDef topicStyle fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    classDef stripeStyle fill:#6772E5,stroke:#4C63D2,stroke-width:2px,color:#fff
+    classDef webhookStyle fill:#00BCD4,stroke:#00838F,stroke-width:2px,color:#fff
 ```
 
 ## 🚀 Quick Start
@@ -138,54 +146,48 @@ The system deploys as a distributed microservices architecture using Docker Comp
 ### Container Topology
 
 ```mermaid
-graph TB
-    subgraph "Docker Network: zenskar-network"
-        API[zenskar-api<br/>FastAPI Server<br/>Port: 8000]
-        WORKER[zenskar-worker<br/>Background Processor<br/>Internal]
-        DB[(zenskar-postgres<br/>PostgreSQL Database<br/>Port: 5432)]
-        KAFKA[zenskar-kafka<br/>Message Broker<br/>Port: 9093]
-        ZK[zenskar-zookeeper<br/>Coordination Service<br/>Port: 2181]
-        SETUP[kafka-setup<br/>Initialization Service<br/>Ephemeral]
+graph LR
+    subgraph Docker["🐳 Docker Network"]
+        API[🚀 API<br/>Port: 8000]:::api
+        WORKER[⚙️ Worker<br/>Background]:::worker
+        DB[(🗄️ Database<br/>Port: 5432)]:::db
+        KAFKA[📨 Kafka<br/>Port: 9093]:::kafka
+        ZK[🔧 ZooKeeper<br/>Port: 2181]:::zk
+        SETUP[⚡ Setup<br/>Init Only]:::setup
     end
     
-    API -->|TCP/SQL| DB
-    API -->|TCP/Protocol| KAFKA
-    WORKER -->|TCP/Protocol| KAFKA
-    WORKER -->|TCP/SQL| DB
-    KAFKA -->|TCP| ZK
-    SETUP -->|Admin API| KAFKA
+    API --> DB
+    API --> KAFKA
+    WORKER --> KAFKA
+    WORKER --> DB
+    KAFKA --> ZK
+    SETUP -.-> KAFKA
+
+    classDef api fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    classDef worker fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef db fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+    classDef kafka fill:#9C27B0,stroke:#6A1B9A,stroke-width:2px,color:#fff
+    classDef zk fill:#795548,stroke:#5D4037,stroke-width:2px,color:#fff
+    classDef setup fill:#607D8B,stroke:#455A64,stroke-width:2px,color:#fff
 ```
 
 ### Container Interaction Flow
 
 ```mermaid
 sequenceDiagram
-    participant Client as External Client
-    participant API as zenskar-api
-    participant DB as zenskar-postgres
-    participant KP as Kafka Producer
-    participant KT as Kafka Topics
-    participant KC as Kafka Consumer
-    participant Worker as zenskar-worker
-    participant Stripe as Stripe API
+    participant Client as 👤 Client
+    participant API as 🚀 API
+    participant DB as 🗄️ Database
+    participant Kafka as � Kafka
+    participant Worker as ⚙️ Worker
+    participant Stripe as 💳 Stripe
 
-    Note over Client,Stripe: Container Interaction During Customer Creation
-    
-    Client->>API: HTTP POST /customers
-    API->>DB: SQL INSERT customer
-    DB-->>API: customer_id
-    API->>KP: Publish event
-    KP->>KT: sync.outbound message
-    API-->>Client: HTTP 201 Response
-    
-    Note over KT,Worker: Asynchronous Processing
-    
-    KT->>KC: Consume message
-    KC->>Worker: Process event
-    Worker->>Stripe: HTTP POST customer
-    Stripe-->>Worker: stripe_customer_id
-    Worker->>DB: INSERT external_mapping
-    DB-->>Worker: Confirmation
+    Client->>API: Create Customer
+    API->>DB: Save Customer
+    API->>Kafka: Publish Event
+    Kafka->>Worker: Process Event
+    Worker->>Stripe: Sync to Stripe
+    Worker->>DB: Update Mapping
 ```
 
 ### Container Specifications
@@ -280,20 +282,6 @@ docker logs zenskar-worker | tail -20
 docker stats --no-stream
 ```
 
-### Operational Considerations
-
-#### Container Restart Behavior
-- **Database**: Persistent volumes ensure data survival across restarts
-- **Kafka**: Topic metadata and message retention survive restarts
-- **API/Worker**: Stateless containers restart cleanly
-- **ZooKeeper**: Maintains Kafka coordination state
-
-#### Scaling Characteristics
-- **API Container**: Horizontally scalable with load balancer
-- **Worker Container**: Scalable through Kafka consumer groups
-- **Database**: Single instance with backup/replication strategies
-- **Kafka**: Single node sufficient for development, clusterable for production
-
 #### Network Security
 - Internal communication secured within Docker bridge network
 - Only API container exposes public interface
@@ -329,45 +317,25 @@ docker stats --no-stream
 
 ```mermaid
 sequenceDiagram
-    participant U as User/Client
-    participant API as FastAPI Server
-    participant DB as PostgreSQL
-    participant KC as Kafka Producer
-    participant KT as Kafka Topic
-    participant OW as Outbound Worker
-    participant S as Stripe API
-    participant EM as External Mapping
+    participant User as 👤 User
+    participant API as 🚀 API
+    participant DB as 🗄️ Database
+    participant Kafka as 📨 Kafka
+    participant Worker as ⚙️ Worker
+    participant Stripe as � Stripe
 
-    U->>API: POST /api/v1/customers
-    Note over API: Validate request data
+    User->>API: POST /customers
+    API->>DB: Save Customer
+    DB-->>API: customer_id: 10
+    API->>Kafka: Publish Event
+    API-->>User: 201 Created
     
-    API->>DB: INSERT INTO customers
-    DB-->>API: customer_id = 10
+    Note over Kafka,Worker: Background Processing
     
-    API->>KC: publish_message()
-    Note over KC: Topic: sync.outbound
-    KC->>KT: {"event_type": "customer.created", "entity_id": 10, "customer_data": {...}}
-    
-    API-->>U: 201 Created {"id": 10, ...}
-    
-    Note over KT,OW: Background Processing
-    KT->>OW: consume_message()
-    Note over OW: OutboundSyncWorker.process_message()
-    
-    OW->>DB: SELECT customer WHERE id = 10
-    DB-->>OW: customer data
-    
-    OW->>DB: INSERT INTO sync_events (status='pending')
-    
-    OW->>S: stripe.Customer.create(name, email, metadata)
-    S-->>OW: {"id": "cus_xyz123", ...}
-    
-    OW->>EM: INSERT INTO external_mappings
-    Note over EM: internal_id=10, external_id=cus_xyz123
-    
-    OW->>DB: UPDATE sync_events (status='completed')
-    
-    Note over S: Customer now exists in Stripe!
+    Kafka->>Worker: Consume Event
+    Worker->>Stripe: Create Customer
+    Stripe-->>Worker: stripe_id: cus_xyz123
+    Worker->>DB: Save Mapping (10 ↔ cus_xyz123)
 ```
 
 **Detailed Backend Flow:**
@@ -383,50 +351,25 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant SD as Stripe Dashboard
-    participant S as Stripe System
-    participant N as Ngrok Tunnel
-    participant WH as Webhook Handler
-    participant KC as Kafka Producer
-    participant KT as Kafka Topic
-    participant IW as Inbound Worker
-    participant DB as PostgreSQL
-    participant EM as External Mapping
+    participant Stripe as 💳 Stripe
+    participant Webhook as � Webhook
+    participant API as � API
+    participant Kafka as 📨 Kafka
+    participant Worker as ⚙️ Worker
+    participant DB as 🗄️ Database
 
-    Note over SD: User creates customer manually
-    SD->>S: Create customer via Stripe UI
-    S->>S: Customer created: cus_abc456
+    Note over Stripe: Customer created in Stripe Dashboard
     
-    Note over S,N: Webhook Delivery
-    S->>N: POST webhook event
-    Note over N: Forwards to localhost:8000
-    N->>WH: POST /api/v1/webhooks/stripe
+    Stripe->>Webhook: Send Webhook Event
+    Webhook->>API: POST /webhooks/stripe
+    API->>Kafka: Publish Event
+    API-->>Webhook: 200 OK
     
-    Note over WH: Verify webhook signature
-    WH->>WH: stripe.Webhook.construct_event()
+    Note over Kafka,Worker: Background Processing
     
-    WH->>KC: publish_message()
-    Note over KC: Topic: sync.inbound
-    KC->>KT: {"source": "stripe", "event_type": "customer.created", "data": {...}}
-    
-    WH-->>S: 200 OK (Webhook acknowledged)
-    
-    Note over KT,IW: Background Processing
-    KT->>IW: consume_message()
-    Note over IW: InboundSyncWorker.process_message()
-    
-    IW->>EM: SELECT mapping WHERE external_id = 'cus_abc456'
-    EM-->>IW: No mapping found
-    
-    IW->>DB: INSERT INTO customers (name, email)
-    DB-->>IW: customer_id = 11
-    
-    IW->>EM: INSERT INTO external_mappings
-    Note over EM: internal_id=11, external_id=cus_abc456
-    
-    IW->>DB: INSERT INTO sync_events (status='completed')
-    
-    Note over DB: Customer now synced to internal system!
+    Kafka->>Worker: Consume Event
+    Worker->>DB: Save Customer
+    Worker->>DB: Save Mapping (stripe_id ↔ internal_id)
 ```
 
 **Detailed Backend Flow:**
@@ -444,24 +387,24 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant OW as Outbound Worker
-    participant S as Stripe API
-    participant DB as PostgreSQL
-    participant KT as Kafka Topic
+    participant OW as ⚙️ Outbound Worker
+    participant S as 💳 Stripe API
+    participant DB as 🗄️ PostgreSQL
+    participant KT as 📨 Kafka Topic
 
-    OW->>S: stripe.Customer.create()
-    S-->>OW: 429 Rate Limited
+    OW->>+S: stripe.Customer.create()
+    S-->>-OW: ❌ 429 Rate Limited
     
-    Note over OW: Catch RateLimitError
-    OW->>DB: UPDATE sync_events (status='failed', retry_count++)
+    Note over OW: 🚨 Catch RateLimitError
+    OW->>+DB: UPDATE sync_events (status='failed', retry_count++)
     
-    Note over OW: Exponential backoff
+    Note over OW: ⏳ Exponential backoff
     OW->>OW: sleep(2^retry_count)
     
-    OW->>S: Retry stripe.Customer.create()
-    S-->>OW: 200 Success
+    OW->>+S: 🔄 Retry stripe.Customer.create()
+    S-->>-OW: ✅ 200 Success
     
-    OW->>DB: UPDATE sync_events (status='completed')
+    OW->>+DB: UPDATE sync_events (status='completed')
 ```
 
 **Error Scenarios Handled:**
