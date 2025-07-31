@@ -1,8 +1,46 @@
-# Zenskar Two-Way Integration System
+# 🚀 Zenskar Two-Way Integration System
 
-A real-time, event-driven system for seamless bi-directional synchronization of customer data between an internal catalog and Stripe. This project demonstrates robust integration using Kafka for streaming, ensuring accurate and consistent customer records across systems.
+> 🌟 **A real-time, event-driven system for seamless bi-directional synchronization of customer data between an internal catalog and Stripe.**
+
+This project demonstrates robust integration architecture using **Kafka streaming**, ensuring accurate and consistent customer records across systems with enterprise-grade reliability.
+
+---
 
 ## 🎯 Project Overview
+
+This system implements a **two-way sync** between your internal customer database and Stripe's customer catalog. Changes in either system are automatically propagated to the other in near real-time using webhooks and background workers.
+
+### 🏆 Why This Matters
+- **🔄 Real-time Sync**: Instant data consistency across platforms
+- **⚡ Event-Driven**: Scalable architecture for high-volume operations  
+- **🛡️ Fault-Tolerant**: Robust error handling and retry mechanisms
+- **🔧 Extensible**: Ready for Salesforce, QuickBooks, and more integrations
+
+---
+
+## 📊 System Components
+
+### API Server (`src/api/`)
+- **FastAPI** REST API server
+- **Customer CRUD** operations
+- **Webhook handlers** for Stripe events
+- **Event publishing** to Kafka
+
+#### Available API Routes
+
+| Method | Endpoint | Description | Response |
+|--------|----------|-------------|----------|
+| `GET` | `/api/v1/customers` | List all customers with pagination | `CustomerResponse[]` |
+| `GET` | `/api/v1/customers/{id}` | Get customer by ID with external mappings | `CustomerWithMappings` |
+| `POST` | `/api/v1/customers` | Create new customer (triggers outbound sync) | `CustomerResponse` |
+| `PUT` | `/api/v1/customers/{id}` | Update customer (triggers outbound sync) | `CustomerResponse` |
+| `DELETE` | `/api/v1/customers/{id}` | Delete customer (triggers outbound sync) | `204 No Content` |
+| `POST` | `/api/v1/webhooks/stripe` | Stripe webhook handler (triggers inbound sync) | `200 OK` |
+| `GET` | `/health` | Health check endpoint | `{"status": "healthy"}` |
+
+**Interactive Documentation:**
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 This system implements a two-way sync between your internal customer database and Stripe's customer catalog. Changes in either system are automatically propagated to the other in near real-time using webhooks and background workers.
 
@@ -457,66 +495,17 @@ sequenceDiagram
 
 ## 🚀 Future Extensions
 
-### 1. Salesforce Integration Plan
+For detailed integration plans and extensibility strategies, see **[INTEGRATION_PLANS.md](./INTEGRATION_PLANS.md)**:
 
-The current architecture is designed to easily support additional integrations:
+- **🏢 Salesforce Integration**: Complete CRM synchronization with contact and opportunity management
+- **📄 Invoice Catalog Integration**: Automated billing workflows with payment processors
+- **🔧 Additional External Systems**: Framework for adding new payment providers and CRM platforms
 
-```python
-# src/integrations/salesforce/client.py
-class SalesforceIntegration(BaseIntegration):
-    def __init__(self):
-        super().__init__("salesforce")
-        # Salesforce-specific initialization
-    
-    async def create_customer(self, customer_data):
-        # Salesforce API implementation
-        pass
-```
-
-**Steps to implement:**
-1. Create `SalesforceIntegration` class extending `BaseIntegration`
-2. Add Salesforce-specific configuration
-3. Create Salesforce-specific workers
-4. Add new Kafka topics for Salesforce events
-5. Update external mappings to support multiple systems
-
-### 2. Invoice Catalog Extension Plan
-
-The system can be extended to support other entities like invoices:
-
-```python
-# New models
-class Invoice(Base):
-    id: int
-    customer_id: int
-    amount: decimal
-    status: str
-
-class InvoiceMapping(Base):
-    internal_invoice_id: int
-    external_system: str
-    external_id: str
-```
-
-**Steps to implement:**
-1. Create invoice models and database tables
-2. Add invoice-specific Kafka topics (`invoice.sync.inbound`, `invoice.sync.outbound`)
-3. Create invoice workers similar to customer workers
-4. Extend integration interfaces to support invoices
-5. Add invoice API endpoints
-
-### 3. Multi-System Support
-
-The current mapping system already supports multiple external systems:
-
-```sql
--- External mappings table supports multiple systems
-CREATE TABLE external_mappings (
-    internal_customer_id INT,
-    external_system VARCHAR,  -- 'stripe', 'salesforce', etc.
-    external_id VARCHAR
-);
-```
+Each integration plan includes:
+- Architecture diagrams and data flow
+- Implementation strategies and technical considerations
+- Database schema extensions and API enhancements
+- Comprehensive testing and rollout procedures
 
 ## 🔒 Security Considerations
 
@@ -524,25 +513,3 @@ CREATE TABLE external_mappings (
 - **Environment Variables**: Sensitive data stored in environment variables
 - **API Keys**: Stripe keys are test keys, rotate for production
 - **Database**: PostgreSQL with proper connection pooling
-
-## 🎯 Assignment Summary
-
-This project successfully implements all requirements for the **Zenskar Backend Engineer Intern assignment**:
-
-✅ **Customer table** with PostgreSQL (ID, name, email columns)  
-✅ **Stripe integration** with free test account  
-✅ **Kafka queue** for event processing  
-✅ **Outbound sync** (Internal → Stripe) with background workers  
-✅ **Inbound sync** (Stripe → Internal) with webhook handling  
-✅ **Extensible architecture** ready for future integrations  
-✅ **Production-ready** with Docker containerization and monitoring
-
-### 🚀 Key Technical Achievements
-
-- **Event-Driven Architecture**: Real-time bidirectional synchronization
-- **Scalable Design**: Independent scaling of API and worker components  
-- **Robust Error Handling**: Exponential backoff and retry mechanisms
-- **Developer Experience**: Comprehensive documentation and easy setup
-- **Future-Proof**: Extensible design for Salesforce and other integrations
-
-The system demonstrates professional software engineering practices with clean architecture, comprehensive testing tools, and production-ready deployment configuration.
