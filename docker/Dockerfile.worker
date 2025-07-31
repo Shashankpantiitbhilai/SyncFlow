@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run the worker
-CMD ["python", "-m", "src.workers.outbound_sync"]
+CMD ["python", "-m", "src.workers"]
