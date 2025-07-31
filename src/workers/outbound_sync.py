@@ -32,6 +32,11 @@ class OutboundSyncWorker(BaseWorker):
         customer_data = message.get("customer_data", {})
         customer_id = customer_data.get("id")
         
+        # Skip if this is from a webhook and marked to skip outbound sync
+        if message.get("skip_outbound"):
+            logger.info(f"Skipping outbound sync for webhook event: {event_type}")
+            return
+        
         if not customer_id:
             logger.error("No customer ID in message")
             return
@@ -44,27 +49,122 @@ class OutboundSyncWorker(BaseWorker):
                     entity_type="customer",
                     entity_id=customer_id,
                     external_system="stripe",
-                    payload=message
+                    payload=message,
+                    status="pending"
                 )
                 db.add(sync_event)
-                await db.commit()
-                await db.refresh(sync_event)
                 
-                # Process the event
-                if event_type == "customer.created":
-                    await self._handle_customer_created(db, customer_id, customer_data, sync_event)
-                elif event_type == "customer.updated":
-                    await self._handle_customer_updated(db, customer_id, customer_data, sync_event)
-                elif event_type == "customer.deleted":
-                    await self._handle_customer_deleted(db, customer_id, customer_data, sync_event)
-                else:
-                    logger.warning(f"Unknown event type: {event_type}")
-                    return
+                # For non-delete operations, get customer data
+                if event_type != "customer.deleted":
+                    customer = await db.execute(
+                        select(Customer).where(Customer.id == customer_id)
+                    )
+                    customer = customer.scalar_one_or_none()
+                    
+                    if not customer:
+                        logger.error(f"Customer not found: {customer_id}")
+                        sync_event.status = "failed"
+                        sync_event.error = "Customer not found"
+                        await db.commit()
+                        return
+
+                # Get existing mapping (will be used for all operations)
+                mapping = await db.execute(
+                    select(ExternalMapping).where(
+                        ExternalMapping.internal_customer_id == customer_id,
+                        ExternalMapping.external_system == "stripe"
+                    )
+                )
+                mapping = mapping.scalar_one_or_none()
                 
-                # Update sync event as processed
-                sync_event.status = "completed"
-                sync_event.processed_at = asyncio.get_event_loop().time()
-                await db.commit()
+                try:
+                    if event_type == "customer.created":
+                        if mapping:
+                            logger.warning(f"Customer {customer_id} already mapped to Stripe")
+                            sync_event.status = "skipped"
+                            await db.commit()
+                            return
+                            
+                        # Create in Stripe
+                        logger.info(f"Creating customer in Stripe with data: id={customer.id}, name={customer.name}, email={customer.email}")
+                        external_id = await self.stripe_integration.create_customer({
+                            "id": customer.id,
+                            "name": customer.name,
+                            "email": customer.email
+                        })
+                        logger.info(f"Received Stripe customer ID: {external_id}")
+                        
+                        if not external_id:
+                            logger.error("Failed to receive external_id from Stripe")
+                            sync_event.status = "failed"
+                            sync_event.error = "No external ID received from Stripe"
+                            await db.commit()
+                            return
+                            
+                        # Create mapping
+                        logger.info(f"Creating external mapping: internal_id={customer.id}, external_id={external_id}")
+                        mapping = ExternalMapping(
+                            internal_customer_id=customer.id,
+                            external_system="stripe",
+                            external_id=external_id
+                        )
+                        db.add(mapping)
+                        await db.flush()  # Flush to ensure the mapping is created
+                        logger.info(f"External mapping created with ID: {mapping.id}")
+                        
+                        
+                    elif event_type == "customer.updated":
+                        if not mapping:
+                            logger.error(f"No Stripe mapping for customer {customer_id}")
+                            sync_event.status = "failed"
+                            sync_event.error = "No Stripe mapping found"
+                            await db.commit()
+                            return
+                            
+                        # Update in Stripe
+                        await self.stripe_integration.update_customer(
+                            mapping.external_id,
+                            {
+                                "id": customer.id,
+                                "name": customer.name,
+                                "email": customer.email
+                            }
+                        )
+                        
+                    elif event_type == "customer.deleted":
+                        # For delete operations, we only need the mapping
+                        mapping = await db.execute(
+                            select(ExternalMapping).where(
+                                ExternalMapping.internal_customer_id == customer_id,
+                                ExternalMapping.external_system == "stripe"
+                            )
+                        )
+                        mapping = mapping.scalar_one_or_none()
+                        
+                        if not mapping:
+                            logger.warning(f"No Stripe mapping for deleted customer {customer_id}")
+                            sync_event.status = "skipped"
+                            await db.commit()
+                            return
+                            
+                        # Delete from Stripe
+                        await self.stripe_integration.delete_customer(mapping.external_id)
+                        
+                        # Remove mapping
+                        await db.delete(mapping)
+                    
+                    from datetime import datetime
+                    sync_event.status = "completed"
+                    sync_event.processed_at = datetime.utcnow()
+                    await db.commit()
+                    
+                except Exception as e:
+                    logger.error(f"Failed to sync customer {customer_id} to Stripe: {e}")
+                    sync_event.status = "failed"
+                    sync_event.error = str(e)
+                    sync_event.retry_count += 1
+                    await db.commit()
+                    raise
                 
             except Exception as e:
                 # Update sync event with error
