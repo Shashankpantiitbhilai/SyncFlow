@@ -138,6 +138,5 @@ kafka_client = KafkaClient()
 
 # Kafka topic names
 class KafkaTopics:
-    CUSTOMER_EVENTS = "customer.events"
     SYNC_OUTBOUND = "sync.outbound"
     SYNC_INBOUND = "sync.inbound"

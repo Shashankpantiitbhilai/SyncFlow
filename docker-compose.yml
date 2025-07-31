@@ -44,7 +44,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_CREATE_TOPICS: "sync.inbound:1:1,customer.events:1:1"
+      KAFKA_CREATE_TOPICS: "sync.inbound:1:1"
       KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: 60000
       KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 60000
       KAFKA_ZOOKEEPER_MAX_IN_FLIGHT_REQUESTS: 1
@@ -63,8 +63,7 @@ services:
     command: >
       bash -c "
         echo 'Waiting for Kafka to be ready...' &&
-        kafka-topics --create --if-not-exists --bootstrap-server kafka:9093 --topic sync.inbound --partitions 1 --replication-factor 1 &&
-        kafka-topics --create --if-not-exists --bootstrap-server kafka:9093 --topic customer.events --partitions 1 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9093 --topic sync.inbound --partitions 1 --replication-factor 1
       "
 
   api:
