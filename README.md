@@ -10,7 +10,7 @@ This project demonstrates robust integration architecture using **Kafka streamin
 
 This system implements a **two-way sync** between your internal customer database and Stripe's customer catalog. Changes in either system are automatically propagated to the other in near real-time using webhooks and background workers.
 
-### 🏆 Why This Matters
+
 - **🔄 Real-time Sync**: Instant data consistency across platforms
 - **⚡ Event-Driven**: Scalable architecture for high-volume operations  
 - **🛡️ Fault-Tolerant**: Robust error handling and retry mechanisms
@@ -18,29 +18,7 @@ This system implements a **two-way sync** between your internal customer databas
 
 ---
 
-## 📊 System Components
 
-### API Server (`src/api/`)
-- **FastAPI** REST API server
-- **Customer CRUD** operations
-- **Webhook handlers** for Stripe events
-- **Event publishing** to Kafka
-
-#### Available API Routes
-
-| Method | Endpoint | Description | Response |
-|--------|----------|-------------|----------|
-| `GET` | `/api/v1/customers` | List all customers with pagination | `CustomerResponse[]` |
-| `GET` | `/api/v1/customers/{id}` | Get customer by ID with external mappings | `CustomerWithMappings` |
-| `POST` | `/api/v1/customers` | Create new customer (triggers outbound sync) | `CustomerResponse` |
-| `PUT` | `/api/v1/customers/{id}` | Update customer (triggers outbound sync) | `CustomerResponse` |
-| `DELETE` | `/api/v1/customers/{id}` | Delete customer (triggers outbound sync) | `204 No Content` |
-| `POST` | `/api/v1/webhooks/stripe` | Stripe webhook handler (triggers inbound sync) | `200 OK` |
-| `GET` | `/health` | Health check endpoint | `{"status": "healthy"}` |
-
-**Interactive Documentation:**
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
 
 This system implements a two-way sync between your internal customer database and Stripe's customer catalog. Changes in either system are automatically propagated to the other in near real-time using webhooks and background workers.
 
@@ -147,6 +125,7 @@ ngrok http 8000
 
 ### 5. Test the Integration
 
+
 #### API Health Check
 ```bash
 curl http://localhost:8000/health
@@ -208,6 +187,19 @@ curl http://localhost:8000/api/v1/customers
 ```
 
 **Or use Swagger UI**: http://localhost:8000/docs → `GET /api/v1/customers`
+
+
+#### Available API Routes
+
+| Method | Endpoint | Description | Response |
+|--------|----------|-------------|----------|
+| `GET` | `/api/v1/customers` | List all customers with pagination | `CustomerResponse[]` |
+| `GET` | `/api/v1/customers/{id}` | Get customer by ID with external mappings | `CustomerWithMappings` |
+| `POST` | `/api/v1/customers` | Create new customer (triggers outbound sync) | `CustomerResponse` |
+| `PUT` | `/api/v1/customers/{id}` | Update customer (triggers outbound sync) | `CustomerResponse` |
+| `DELETE` | `/api/v1/customers/{id}` | Delete customer (triggers outbound sync) | `204 No Content` |
+| `POST` | `/api/v1/webhooks/stripe` | Stripe webhook handler (triggers inbound sync) | `200 OK` |
+| `GET` | `/health` | Health check endpoint | `{"status": "healthy"}` |
 
 #### Watch the Sync Process
 ```bash
