@@ -74,10 +74,9 @@ async def stripe_webhook(
             }
             
             # Publish to Kafka for processing
-            await kafka_client.publish_message(
-                topic=KafkaTopics.SYNC_INBOUND,
-                key=customer_data.get("external_id"),
-                value=message
+            await kafka_client.produce_message(
+                KafkaTopics.SYNC_INBOUND,
+                message
             )
             
             logger.info(f"Published Stripe event to sync queue: {event.get('id')}")

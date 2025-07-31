@@ -98,10 +98,12 @@ async def create_customer(
         # Create new customer
         customer = Customer(**customer_data.model_dump())
         db.add(customer)
+        await db.flush()  # Flush to get the customer ID
+        
         await db.commit()
         await db.refresh(customer)
         
-        # Publish event to Kafka
+        # Publish event to Kafka - this will handle outbound sync as well
         await _publish_customer_event("customer.created", customer)
         
         logger.info(f"Created customer: {customer.id}")
@@ -244,7 +246,7 @@ async def _publish_customer_event(event_type: str, customer_data):
         }
         
         await kafka_client.produce_message(
-            KafkaTopics.CUSTOMER_EVENTS,
+            KafkaTopics.SYNC_OUTBOUND,
             event,
             key=str(data["id"])
         )

@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 class BaseWorker(ABC):
     """Base class for all background workers."""
 
-    def __init__(self, worker_name: str):
+    def __init__(self, worker_name: str, group_id: str = None):
         self.worker_name = worker_name
+        self.group_id = group_id or f"{settings.kafka_group_id}-{worker_name}"
         self.running = False
         self.consumer: AIOKafkaConsumer = None
 
@@ -44,7 +45,7 @@ class BaseWorker(ABC):
                     # Start Kafka consumer
                     self.consumer = await kafka_client.start_consumer(
                         self.get_topic(),
-                        group_id=f"{settings.kafka_group_id}-{self.worker_name}",
+                        group_id=self.group_id,
                         message_handler=self._handle_message,
                     )
 

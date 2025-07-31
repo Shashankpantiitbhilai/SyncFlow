@@ -1,213 +1,309 @@
-# 🚀 Zenskar Backend Assignment
-**Two-Way Customer Catalog Integration System**
+# Zenskar Two-Way Integration System
 
-A production-ready, scalable two-way integration system that synchronizes customer data between internal systems and external services like Stripe in near real-time.
+A real-time customer data synchronization system demonstrating two-way integration between an internal customer catalog and Stripe.
 
----
+## Assignment Requirements ✅
 
-## 📋 Table of Contents
-
-- [🏗️ System Architecture](#️-system-architecture)
-- [🔄 Data Flow Diagrams](#-data-flow-diagrams)
-- [🗄️ Database Schema](#️-database-schema)
-- [📡 API Endpoints](#-api-endpoints)
-- [🔌 Integration Patterns](#-integration-patterns)
-- [⚡ Event-Driven Architecture](#-event-driven-architecture)
-- [🛠️ Technology Stack](#️-technology-stack)
-- [🚀 Quick Start Guide](#-quick-start-guide)
-- [📊 Monitoring & Observability](#-monitoring--observability)
-- [🔒 Security Features](#-security-features)
-- [📈 Scalability & Performance](#-scalability--performance)
-- [🧪 Testing Strategy](#-testing-strategy)
-- [🔮 Future Roadmap](#-future-roadmap)
-
----
-
-## 🏗️ System Architecture
-
-### High-Level Architecture Diagram
-
+### 1. Customer Catalog Integration
+![Two-Way Sync](https://raw.githubusercontent.com/mermaid-js/mermaid/develop/docs/public/favicon.png)
 ```mermaid
-graph TB
-    subgraph "External Systems"
-        Stripe[🔷 Stripe API]
-        SF[🔶 Salesforce<br/>Future]
-        Other[🔸 Other Systems<br/>Future]
-    end
-    
-    subgraph "Public Internet"
-        Ngrok[🌐 ngrok Tunnel]
-        Webhooks[📡 Webhook Events]
-    end
-    
-    subgraph "Zenskar Backend System"
-        subgraph "API Layer"
-            FastAPI[🚀 FastAPI Server<br/>Port 8000]
-            WHEndpoint[📨 Webhook Endpoints<br/>/api/v1/webhooks/*]
-            CustAPI[👥 Customer API<br/>/api/v1/customers/*]
-        end
-        
-        subgraph "Message Queue"
-            Kafka[📬 Apache Kafka]
-            TopicCust[📋 customer.events]
-            TopicOut[📤 sync.outbound]
-            TopicIn[📥 sync.inbound]
-        end
-        
-        subgraph "Background Workers"
-            OutWorker[⚙️ Outbound Sync<br/>Worker]
-            InWorker[⚙️ Inbound Sync<br/>Worker]
-        end
-        
-        subgraph "Integration Layer"
-            BaseInt[🔌 BaseIntegration<br/>Interface]
-            StripeInt[🔷 StripeIntegration]
-            SFInt[🔶 SalesforceIntegration<br/>Future]
-        end
-        
-        subgraph "Data Layer"
-            PostgreSQL[(🗄️ PostgreSQL<br/>Database)]
-            Tables{📊 Tables:<br/>• customers<br/>• external_mappings<br/>• sync_events}
-        end
-    end
-    
-    subgraph "Development Tools"
-        Docker[🐳 Docker Compose]
-        Ngrok2[🌐 ngrok CLI]
-        Logs[📝 Structured Logs]
-    end
-
-    %% Data Flow Connections
-    Stripe -.->|Webhooks| Ngrok
-    Ngrok --> WHEndpoint
-    WHEndpoint --> TopicIn
-    TopicIn --> InWorker
-    InWorker --> StripeInt
-    InWorker --> PostgreSQL
-    
-    CustAPI --> TopicCust
-    TopicCust --> TopicOut
-    TopicOut --> OutWorker
-    OutWorker --> StripeInt
-    StripeInt --> Stripe
-    OutWorker --> PostgreSQL
-    
-    FastAPI --> PostgreSQL
-    PostgreSQL --> Tables
-    
-    BaseInt -.-> StripeInt
-    BaseInt -.-> SFInt
-    
-    Docker -.-> PostgreSQL
-    Docker -.-> Kafka
-
-    %% Styling
-    classDef external fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef api fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef queue fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef worker fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef data fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef integration fill:#fff8e1,stroke:#ff6f00,stroke-width:2px
-    
-    class Stripe,SF,Other external
-    class FastAPI,WHEndpoint,CustAPI api
-    class Kafka,TopicCust,TopicOut,TopicIn queue
-    class OutWorker,InWorker worker
-    class PostgreSQL,Tables data
-    class BaseInt,StripeInt,SFInt integration
+graph LR
+    A[Internal DB] -->|Outbound Sync| B[Kafka Queue]
+    B -->|Worker Process| C[Stripe]
+    C -->|Webhook| D[API Server]
+    D -->|Inbound Sync| A
 ```
 
-### Component Interaction Overview
+### 2. Technical Requirements Implementation
+```
+src/
+├── api/                    # FastAPI server
+│   ├── routes/            
+│   │   ├── customers.py   # Customer CRUD endpoints
+│   │   └── webhooks.py    # Stripe webhook handlers
+│   └── main.py            # API server setup
+├── core/                   # Core services
+│   ├── config.py          # Configuration management
+│   ├── database.py        # Database connection
+│   ├── kafka_client.py    # Kafka producer/consumer
+│   └── topics.py          # Kafka topics definition
+├── integrations/          
+│   ├── base.py            # Base integration interface
+│   └── stripe/            # Stripe integration
+│       └── client.py      # Stripe API client
+├── models/                # Database models
+│   ├── customer.py        # Customer model
+│   ├── external_mapping.py # External system mappings
+│   └── sync_event.py      # Sync event tracking
+└── workers/               # Background workers
+    ├── inbound_sync.py    # Process incoming changes
+    └── outbound_sync.py   # Sync outgoing changes
 
+docker/                    # Docker configurations
+migrations/               # Database migrations
+```
+
+## Architecture Overview
+
+### Components
+1. **API Server**
+   - REST API for customer management
+   - Webhook endpoint for Stripe events
+
+2. **Event Processing**
+   - Inbound Sync: Stripe → Internal DB
+   - Outbound Sync: Internal → Stripe
+   - Kafka for event handling
+
+### Event Flow
+```
+Internal Change → Kafka (sync.outbound) → Outbound Worker → Stripe
+Stripe Change → Webhook → Kafka (sync.inbound) → Inbound Worker → DB
+```
+
+## Setup and Usage
+
+### Prerequisites
+- Docker and Docker Compose
+- ngrok (for webhook testing)
+
+### Quick Start
+1. Clone and configure
+   ```bash
+   git clone <repository-url>
+   cd zenskar-backend
+   cp .env.example .env
+   # Add your Stripe API keys in .env
+   ```
+
+2. Start services
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Set up webhook forwarding
+   ```bash
+   ngrok http 8000
+   # Add ngrok URL in Stripe dashboard: /api/webhooks/stripe
+   ```
+
+### Live Demo: Two-Way Sync
+
+#### 1. Outbound Sync (Internal → Stripe) 🔄
+```bash
+# Create a customer in our system
+curl -X POST http://localhost:8000/api/customers \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Demo User", "email": "demo@example.com"}'
+
+# Watch the sync process:
+docker logs -f zenskar-worker
+```
+
+**What happens:**
+1. ➡️ API creates customer in PostgreSQL
+2. ➡️ Event published to `sync.outbound` topic
+3. ➡️ Worker processes event and creates in Stripe
+4. ➡️ Mapping stored for future reference
+
+#### 2. Inbound Sync (Stripe → Internal) 🔄
+
+##### Method 1: Webhook-based (Implemented) ✓
 ```mermaid
 sequenceDiagram
-    participant Client as 👤 Client/API
-    participant API as 🚀 FastAPI
-    participant Kafka as 📬 Kafka
-    participant Worker as ⚙️ Worker
-    participant Integration as 🔌 Integration
-    participant Stripe as 🔷 Stripe
-    participant DB as 🗄️ Database
+    participant S as Stripe
+    participant N as Ngrok
+    participant A as API
+    participant K as Kafka
+    participant W as Worker
+    participant D as DB
 
-    Note over Client,DB: Customer Creation Flow
-    Client->>API: POST /customers
-    API->>DB: Save Customer
-    DB-->>API: Customer Created
-    API->>Kafka: Publish Event
-    API-->>Client: HTTP 201 Response
-    
-    Kafka->>Worker: Consume Event
-    Worker->>Integration: Transform Data
-    Integration->>Stripe: Create Customer
-    Stripe-->>Integration: Customer ID
-    Integration-->>Worker: Success
-    Worker->>DB: Save External Mapping
-    
-    Note over Client,DB: Webhook Reception Flow
-    Stripe->>API: Webhook Event
-    API->>Kafka: Publish Inbound Event
-    API-->>Stripe: HTTP 200 OK
-    
-    Kafka->>Worker: Consume Inbound Event
-    Worker->>Integration: Parse Stripe Data
-    Integration->>DB: Update Customer
-    Worker->>DB: Log Sync Event
+    S->>N: Customer Event
+    N->>A: Forward
+    A->>K: Publish
+    K->>W: Process
+    W->>D: Update
 ```
 
----
+**Test it:**
+```bash
+# 1. Start ngrok
+ngrok http 8000
 
-## 🔄 Data Flow Diagrams
-
-### 1. Outbound Sync Flow (Internal → Stripe)
-
-```mermaid
-flowchart LR
-    subgraph "User Action"
-        A[👤 User Creates<br/>Customer via API]
-    end
-    
-    subgraph "API Processing"
-        B[🚀 FastAPI Endpoint<br/>POST /customers]
-        C[💾 Save to Database]
-        D[📤 Publish to Kafka<br/>customer.events]
-    end
-    
-    subgraph "Background Processing"
-        E[📬 Kafka Topic<br/>customer.events]
-        F[⚙️ Outbound Worker<br/>Consumes Event]
-        G[🔍 Check External<br/>Mapping]
-        H[🔷 Stripe Integration<br/>Create Customer]
-        I[💾 Save External<br/>Mapping]
-    end
-    
-    subgraph "External System"
-        J[🔷 Stripe Customer<br/>Created]
-    end
-
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    H --> J
-    
-    style A fill:#e3f2fd
-    style J fill:#e8f5e8
-    style E fill:#fff3e0
-    style F fill:#fff3e0
+# 2. Create customer in Stripe dashboard
+# 3. Watch it sync to our system:
+curl http://localhost:8000/api/customers
 ```
 
-### 2. Inbound Sync Flow (Stripe → Internal)
+##### Method 2: Polling (Alternative) ✓
+```python
+# Available but webhook preferred
+async def poll_stripe_changes():
+    last_poll = await get_last_poll_timestamp()
+    customers = stripe.Customer.list(
+        created={'gte': last_poll}
+    )
+```
 
+### Monitor the Integration
+
+```bash
+# Watch worker logs
+docker logs -f zenskar-worker
+
+# Check API logs
+docker logs -f zenskar-api
+
+# Verify customer sync
+curl http://localhost:8000/api/customers
+```
+
+## Future Extensions 🚀
+
+### 1. Salesforce Integration
 ```mermaid
-flowchart LR
-    subgraph "External Event"
-        A[🔷 Customer Updated<br/>in Stripe Dashboard]
-        B[📡 Stripe Webhook<br/>Triggered]
+graph TB
+    subgraph "Integration Layer"
+        Base[Base Interface]
+        Stripe[Stripe Integration]
+        SF[Salesforce Integration]
+        Base --> Stripe
+        Base --> SF
     end
+```
+
+Our architecture is designed for easy extension:
+- Base integration interface
+- Modular event processing
+- System-agnostic mapping
+
+### 2. Invoice Catalog Extension
+```mermaid
+graph TB
+    subgraph "Catalogs"
+        C[Customer Catalog]
+        I[Invoice Catalog]
+    end
+    subgraph "Integration Layer"
+        CI[Customer Integration]
+        II[Invoice Integration]
+    end
+    C --> CI
+    I --> II
+```
+
+Steps to add invoice support:
+1. Add invoice models and mappings
+2. Create invoice-specific workers
+3. Extend integration interfaces
+4. Add new Kafka topics
+
+### Architecture Benefits 🎯
+
+1. **Modularity**
+   - Separate workers per integration
+   - Independent processing queues
+   - Isolated failure domains
+
+2. **Scalability**
+   - Event-driven architecture
+   - Horizontally scalable workers
+   - Independent scaling per integration
+
+3. **Maintainability**
+   - Clear separation of concerns
+   - Consistent patterns
+   - Easy to extend
+   - Changes reflect automatically in internal system
+
+### Monitoring
+```bash
+# API logs
+docker logs zenskar-api
+
+# Worker logs
+docker logs zenskar-worker
+```
+   ```
+
+4. Set up webhook forwarding
+   ```bash
+   # Start ngrok to forward webhooks
+   ngrok http 8000
+   
+   # Copy the ngrok URL and add it in your Stripe dashboard:
+   # Dashboard -> Developers -> Webhooks -> Add endpoint
+   # URL: https://<your-ngrok-url>/api/webhooks/stripe
+   # Events to send: customer.*
+   ```
+
+### Testing the Integration
+
+1. Test Outbound Sync (Internal → Stripe)
+   ```bash
+   # Create a customer via API
+   curl -X POST http://localhost:8000/api/customers \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Test User", "email": "test@example.com"}'
+   
+   # Check Stripe dashboard to verify customer creation:
+   # Dashboard -> Customers
+   ```
+
+2. Test Inbound Sync (Stripe → Internal)
+   ```bash
+   # 1. Go to Stripe Dashboard -> Customers
+   # 2. Create or update a customer
+   # 3. Check the customer in your system:
+   curl http://localhost:8000/api/customers
+   
+   # Check worker logs for sync status:
+   docker logs zenskar-worker
+   ```
+
+3. Monitor Events
+   ```bash
+   # Check API logs
+   docker logs zenskar-api
+   
+   # Check worker logs
+   docker logs zenskar-worker
+   
+   # Check webhook events
+   docker logs zenskar-api | grep "webhook"
+   ```
+
+### Troubleshooting
+- If webhooks aren't working:
+  - Verify ngrok is running and URL is correctly set in Stripe
+  - Check webhook logs: `docker logs zenskar-api | grep "webhook"`
+  - Verify webhook secret in .env matches Stripe dashboard
+
+- If sync isn't working:
+  - Check worker logs: `docker logs zenskar-worker`
+  - Verify Kafka topics: `docker exec -it zenskar-kafka kafka-topics --list`
+  - Check API logs: `docker logs zenskar-api`
+
+## Integration Plans
+
+### Current: Stripe Integration
+- Real-time two-way sync of customer data
+- Webhook-based inbound sync
+- Event-driven outbound sync
+- Idempotent operations
+
+### Planned: Salesforce Integration
+1. **Implementation Strategy**
+   - Extend base integration interface
+   - Implement Salesforce API client
+   - Add Salesforce-specific mapping logic
+   - Reuse existing event processing infrastructure
+
+2. **Changes Required**
+   - Add Salesforce API client in `integrations/`
+   - Extend external mapping for Salesforce fields
+   - Add Salesforce-specific transformations
+   - Configure webhook endpoints for Salesforce events
     
     subgraph "Webhook Processing"
         C[🌐 ngrok Tunnel]

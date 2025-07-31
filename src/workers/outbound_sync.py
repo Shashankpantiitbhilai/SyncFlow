@@ -19,12 +19,13 @@ class OutboundSyncWorker(BaseWorker):
     """Worker for synchronizing internal changes to external systems."""
     
     def __init__(self):
-        super().__init__("outbound-sync")
+        # Use a specific consumer group for outbound sync
+        super().__init__("outbound-sync", group_id="zenskar-sync-outbound")
         self.stripe_integration = StripeIntegration()
     
     def get_topic(self) -> str:
         """Get the Kafka topic this worker should consume from."""
-        return KafkaTopics.CUSTOMER_EVENTS
+        return KafkaTopics.SYNC_OUTBOUND
     
     async def process_message(self, message: Dict[str, Any]) -> None:
         """Process customer event message."""

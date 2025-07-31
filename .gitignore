@@ -38,6 +38,16 @@ env/
 .env.staging
 *.env
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+*.node
+*.exe
+
 # IDE
 .vscode/
 .idea/
