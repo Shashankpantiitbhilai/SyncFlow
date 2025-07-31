@@ -20,7 +20,6 @@ This system implements a **two-way sync** between your internal customer databas
 
 
 
-This system implements a two-way sync between your internal customer database and Stripe's customer catalog. Changes in either system are automatically propagated to the other in near real-time using webhooks and background workers.
 
 
 ### ✅ Core Requirements
