@@ -1,7 +1,7 @@
 # 🚀 Installation Guide
 
 
-This guide will walk you through setting up the Zenskar Two-Way Integration System on your local machine.
+This guide will walk through setting up the Zenskar Two-Way Integration System on your local machine.
 
 ## 📋 Prerequisites
 
