@@ -230,8 +230,3 @@ docker-compose up -d
 # Rebuild and restart (after code changes)
 docker-compose up -d --build
 ```
-
-## 📊 Demo Integration
-
-The system includes a demo video showing the complete setup and testing process:
-- **Demo Video**: [Google Drive Link](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)
