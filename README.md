@@ -143,7 +143,7 @@ graph TB
 
 <div align="center">
 
-📖 **[Complete Installation Guide](./INSTALLATION.md)** | 🎥 **[Demo Video](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)**
+📖 **[Complete Installation Guide](INSTALLATION.md)** | 🎥 **[Demo Video](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)**
 
 </div>
 
