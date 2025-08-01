@@ -105,7 +105,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - WEBHOOK_BASE_URL=${WEBHOOK_BASE_URL}
+     
       - ENVIRONMENT=${ENVIRONMENT}
     depends_on:
       postgres:
