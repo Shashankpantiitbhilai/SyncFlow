@@ -134,13 +134,28 @@ graph TB
     classDef stripeStyle fill:#6772E5,stroke:#4C63D2,stroke-width:2px,color:#fff
     classDef webhookStyle fill:#00BCD4,stroke:#00838F,stroke-width:2px,color:#fff
 ```
-🚀 Quick Start
 
-📖 Detailed Setup: See INSTALLATION.md for complete installation guide
-### Test the Integration
+</div>
 
+---
 
-#### API Health Check
+## 🚀 Quick Start
+
+<div align="center">
+
+📖 **[Complete Installation Guide](./INSTALLATION.md)** | 🎥 **[Demo Video](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)**
+
+</div>
+
+### ⚡ Quick Setup
+
+```bash
+git clone https://github.com/Shashankpantiitbhilai/zenskar-backend-assignment.git
+cd zenskar-backend-assignment
+```
+
+### 🔍 API Health Check
+
 ```bash
 curl http://localhost:8000/health
 # Expected: {"status": "healthy"}
@@ -228,12 +243,8 @@ stripe customers create \
 | `POST` | `/api/v1/webhooks/stripe` | Stripe webhook handler (triggers inbound sync) | `200 OK` |
 | `GET` | `/health` | Health check endpoint | `{"status": "healthy"}` |
 
+### 🔍 Watch the Sync Process
 
-## 📊 Demo Integration
-
-The system includes a demo video showing the complete setup and testing process:
-- **Demo Video**: [Video](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)
-#### Watch the Sync Process
 ```bash
 # 👀 Watch worker logs
 docker logs -f zenskar-worker
@@ -555,7 +566,7 @@ Real-time sync metrics and performance dashboards
 </tr>
 </table>
 
-> 📝 **For detailed integration plans**, see [INTEGRATION_PLANS.md](./INTEGRATION_PLANS.md)
+> 📝 **For detailed integration plans**, see [Integration Plans](./docs/INTEGRATION_PLANS.md)
 
 ### 🔧 Adding New Features
 
@@ -594,8 +605,6 @@ PostgreSQL with proper connection pooling
 ---
 
 <div align="center">
-
-
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org/)
