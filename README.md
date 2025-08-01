@@ -143,7 +143,7 @@ graph TB
 
 <div align="center">
 
-📖 **[Complete Installation Guide](INSTALLATION.md)** | 🎥 **[Demo Video](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)**
+📖 **[Complete Installation Guide](./INSTALLATION.md)** | 🎥 **[Demo Video](https://drive.google.com/file/d/1sAgZcDdb8oNkmtQMD3AiqAmrW9-QuRuY/view?usp=sharing)**
 
 </div>
 
@@ -566,7 +566,7 @@ Real-time sync metrics and performance dashboards
 </tr>
 </table>
 
-> 📝 **For detailed integration plans**, see [Integration Plans](./docs/INTEGRATION_PLANS.md)
+> 📝 **For detailed integration plans**, see [Integration Plans](./INTEGRATION_PLANS.md)
 
 ### 🔧 Adding New Features
 
