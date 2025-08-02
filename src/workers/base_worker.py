@@ -90,4 +90,4 @@ class BaseWorker(ABC):
             logger.info(f"Message processed successfully by {self.worker_name}")
         except Exception as e:
             logger.error(f"Failed to process message in {self.worker_name}: {e}")
-            # TODO: Add DLQ/retry/alerting if needed
+          
